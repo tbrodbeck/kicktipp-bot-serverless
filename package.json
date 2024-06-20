@@ -1,0 +1,14 @@
+{
+  "name": "kicktipp-bot-serverless",
+  "version": "1.0.0",
+  "description": "This script can automatically enter tips into Kicktipp based on the quotes of the bookmakers. It is written in Python and uses Selenium to interact with the website.",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.44.1",
+    "@types/node": "^20.14.6"
+  }
+}

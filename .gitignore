@@ -1,0 +1,24 @@
+# Ignore IDE files and Mac files
+.DS_Store
+.idea/
+*.iml
+
+# Ignore the .env file in the root directory
+.env
+
+# Ignore Kubernetes secrets
+my-secrets.yaml
+
+# Chromedriver (if it is stored in the project)
+chromedriver
+
+scratch*
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
