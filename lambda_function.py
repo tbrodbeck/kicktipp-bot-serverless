@@ -15,7 +15,6 @@ LOGIN_URL = "https://www.kicktipp.de/info/profil/login/"
 EMAIL = os.getenv("KICKTIPP_EMAIL")
 PASSWORD = os.getenv("KICKTIPP_PASSWORD")
 NAME_OF_COMPETITION = os.getenv("KICKTIPP_NAME_OF_COMPETITION")
-CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH")
 ZAPIER_URL = os.getenv("ZAPIER_URL")
 TIME_UNTIL_GAME = os.getenv("KICKTIPP_HOURS_UNTIL_GAME") != None and timedelta(
     hours=int(os.getenv("KICKTIPP_HOURS_UNTIL_GAME"))) or timedelta(hours=2)
@@ -38,9 +37,8 @@ def predict_with_win_loss_ratio(win, loss, goals_so_far, group_phase=True):
     tuple: Tuple containing predicted goals for team 1, team 2, and the loss ratio.
     """
     ko_goal_multiplier = 3.29 / 2.94
-    expected_goals = goals_so_far if group_phase else goals_so_far * ko_goal_multiplier
-    # average_goals = 2.49 if group_phase else 3.29
-    # expected_goals = (average_goals + goals_so_far) / 2
+    expected_goals = goals_so_far if group_phase else goals_so_far * ko_goal_multiplier # the group phase will require an additional scraping logic with calculating the `expected_goals`
+
     loss_ratio = win / (win + loss)
     debug(f'average_goals={expected_goals}; loss_ratio={loss_ratio}')
     loss_goals_estimate = expected_goals * loss_ratio
@@ -97,8 +95,7 @@ def tip_all_games():
         goals_so_far = goals_x2 / games_x2
         logging.info(f'{goals_so_far=}')
 
-        # Go to tip submission
-                # Go to tip submission page
+        # Go to tip submission page
         page.goto(F"https://www.kicktipp.de/{NAME_OF_COMPETITION}/tippabgabe")
 
         page.get_by_role("button", name="ZUSTIMMEN").click()
@@ -109,7 +106,6 @@ def tip_all_games():
         datarows = table_handle.locator('xpath=//tbody/tr')
 
         for game_locator in datarows.all():
-            # col3 = game_locator.locator('xpath=./td[4]')
             tippabgaben = game_locator.locator('.kicktipp-tippabgabe')
 
             for tippabgabe in tippabgaben.all():
@@ -234,7 +230,7 @@ def send_ntfy_notification(time, home_team, away_team, quotes, tip):
         except IndexError:
             pass
 
-def lambda_handler(event, context):
+def lambda_handler(_event, _context):
 
     # Check for valid log level names (case-insensitive)
     valid_log_levels = {
