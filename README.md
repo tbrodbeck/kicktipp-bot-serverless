@@ -5,7 +5,7 @@ This script can automatically enter tips into [Kicktipp](https://www.kicktipp.co
 ## Comparison to other tools
 
 The main difference between this approach and [kicktipp-bot](https://github.com/antonengelhardt/kicktipp-bot) is that this tool is...
-1. it is intended to be run as a job not as a service. So it will stop immediately after checking the games and requires an external scheduling tool such as Cron, [GCP Cloud Run Code Triggers](https://cloud.google.com/run/docs/triggering/trigger-with-events) or [AWS EventBridge](https://aws.amazon.com/eventbridge/).
+1. intended to be run as a job not as a service. So it will stop immediately after checking the games and requires an external scheduling tool such as Cron, [GCP Cloud Run Code Triggers](https://cloud.google.com/run/docs/triggering/trigger-with-events) or [AWS EventBridge](https://aws.amazon.com/eventbridge/).
 2. using [Playwright](https://playwright.dev/) instead of [Selenium](https://www.selenium.dev/).
 
 ## Run
