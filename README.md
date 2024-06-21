@@ -1,6 +1,12 @@
-# kicktipp-bot
+# Serverless Kicktipp Bot
 
 This script can automatically enter tips into Kicktipp based on the quotes of the bookmakers. It is written in Python and uses Playwright to interact with the website.
+
+## Comparison to other tools
+
+The main difference between this approach and [kicktipp-bot](https://github.com/antonengelhardt/kicktipp-bot) is that this tool is...
+1. it is intended to be run as a job not as a service. So it will stop immediately after checking the games and requires an external scheduling tool such as Cron, GCP Cloud Run Code Triggers or AWS EventBridge.
+2. using PlayWright instead of Selenium.
 
 ## Run
 
