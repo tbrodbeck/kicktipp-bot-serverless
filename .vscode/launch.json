@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "env": {
-                "PWDEBUG": "1"
+                "PWDEBUG": "1",
+                "LOG_LEVEL": "DEBUG"
             }
         },
         {
@@ -19,7 +20,10 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {
+                "LOG_LEVEL": "DEBUG"
+            }
         }
     ]
 }

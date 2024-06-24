@@ -63,7 +63,7 @@ def predict_with_win_loss_ratio(win, loss, goals_so_far, group_phase=True):
             else:
                 win_goals_estimate -= 1
 
-    return round(win_goals_estimate), round(loss_goals_estimate), 1 - round(loss_ratio, 2), round(expected_goals, 2)
+    return round(win_goals_estimate), round(loss_goals_estimate), round(1 - loss_ratio, 2), round(expected_goals, 2), round(win_goals_estimate, 2), round(loss_goals_estimate, 2)
 
 def tip_all_games():
     # Launch Playwright
@@ -105,6 +105,8 @@ def tip_all_games():
 
         datarows = table_handle.locator('xpath=//tbody/tr')
 
+        time = None
+
         for game_locator in datarows.all():
             tippabgaben = game_locator.locator('.kicktipp-tippabgabe')
 
@@ -112,13 +114,14 @@ def tip_all_games():
                 logging.debug(f'{game_locator.inner_html()=}')
 
                 # Get game info
-                time_element = game_locator.locator(".kicktipp-time")
-                time_str = time_element.inner_text()
-                time = datetime.strptime(time_str, '%d.%m.%y %H:%M')
+                time_str = game_locator.locator(".kicktipp-time").inner_text()
 
                 # Skip game if outside time threshold
-                time_until_game = time - datetime.now()
-                debug(f'{time_until_game=}')
+                if time_str != '':
+                    time = datetime.strptime(time_str, '%d.%m.%y %H:%M')
+                    time_until_game = time - datetime.now()
+                    debug(f'{time_until_game=}')
+
                 if time_until_game > TIME_UNTIL_GAME:
                     print(f'Game starts in {time_until_game}, thats more than ', TIME_UNTIL_GAME, '. Skipping...\n')
                     continue
@@ -158,6 +161,7 @@ def tip_all_games():
 
                 # Calculate tips
                 tip = predict_with_win_loss_ratio(float(quotes[0]), float(quotes[2]), goals_so_far)
+                logging.debug(f'{tip=}')
                 print("Tip: " + str(tip), "\n")
 
                 # Enter tips
@@ -215,7 +219,7 @@ def send_zapier_webhook(time, home_team, away_team, quotes, tip):
 def send_ntfy_notification(time, home_team, away_team, quotes, tip):
     if NTFY_URL is not None and NTFY_USERNAME is not None and NTFY_PASSWORD is not None:
         try:
-            data = f"Time: {time.strftime('%d.%m.%y %H:%M')}; quotes={quotes}; ratio={tip[2]}; goals={tip[3]}"
+            data = f"quotes={quotes}; ratio={tip[2]}; goals={tip[3]}; tip={tip[4]}:{tip[5]}"
 
             headers = {
                 "X-Title": f"{home_team} - {away_team} tipped {tip[0]}:{tip[1]}",
@@ -224,8 +228,7 @@ def send_ntfy_notification(time, home_team, away_team, quotes, tip):
             # utf-8 encode headers
             headers = {k: v.encode('utf-8') for k, v in headers.items()}
 
-            requests.post(NTFY_URL, auth=(
-                NTFY_USERNAME, NTFY_PASSWORD), data=data, headers=headers)
+            requests.post(NTFY_URL, auth=(NTFY_USERNAME, NTFY_PASSWORD), data=data, headers=headers)
 
         except IndexError:
             pass
