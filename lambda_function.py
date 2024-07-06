@@ -79,26 +79,26 @@ def tip_all_games():
         login(page)
 
         # Get goals from previous round to calculate the average goals
-        # page.goto(F"https://www.kicktipp.de/{NAME_OF_COMPETITIONS[0]}/tabellen")
+        page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_QUOTES_COMPETITION}/tabellen")
 
-        # # Find tables with games data
-        # tables = page.query_selector_all(".drei_punkte_regel")
+        # Find tables with games data
+        tables = page.query_selector_all(".drei_punkte_regel")
 
-        # games_preround_x2 = 0
-        # goals_preround_x2 = 0
-        # for table in tables:
-        #     game_counts = table.query_selector_all(".col2")
-        #     for game_count_idx in range(1, len(game_counts)):
-        #         game_count_text = game_counts[game_count_idx].inner_text()
-        #         games_preround_x2 += int(game_count_text)
-        #     goals_found = table.query_selector_all(".col4")
-        #     for goal_idx in range(1, len(goals_found)):
-        #         both_goals_str = goals_found[goal_idx].inner_text()
-        #         both_goals = both_goals_str.split(':')
-        #         goals_preround_x2 += int(both_goals[0]) + int(both_goals[1])
+        games_preround_x2 = 0
+        goals_preround_x2 = 0
+        for table in tables:
+            game_counts = table.query_selector_all(".col2")
+            for game_count_idx in range(1, len(game_counts)):
+                game_count_text = game_counts[game_count_idx].inner_text()
+                games_preround_x2 += int(game_count_text)
+            goals_found = table.query_selector_all(".col4")
+            for goal_idx in range(1, len(goals_found)):
+                both_goals_str = goals_found[goal_idx].inner_text()
+                both_goals = both_goals_str.split(':')
+                goals_preround_x2 += int(both_goals[0]) + int(both_goals[1])
 
-        # goals_preround = goals_preround_x2 / games_preround_x2
-        # info(f'{goals_preround=}')
+        avg_goals_preround = goals_preround_x2 / games_preround_x2
+        info(f'{avg_goals_preround=}')
 
         goals_fulltime = 0
         games_fulltime = 0
@@ -113,13 +113,12 @@ def tip_all_games():
             for result in results.all():
                 result_items = result.locator('//span').all()
                 goals = int(result_items[0].inner_text()) + int(result_items[2].inner_text())
+                goals_ne += goals
+                games_ne += 1
                 if len(result_items) == 4:
                     if result_items[3].inner_text() == 'n.V.':
                         goals_nv += goals
                         games_nv += 1
-                    elif result_items[3].inner_text() == 'n.E.':
-                        goals_ne += goals
-                        games_ne += 1
                 else:
                     goals_fulltime += goals
                     games_fulltime += 1
@@ -129,7 +128,7 @@ def tip_all_games():
         debug(f'{games_fulltime=}, {games_nv=}, {games_ne=}')
         debug(f'{goals_fulltime=}, {goals_nv=}, {goals_ne=}')
 
-        avg_goals_fulltime = goals_fulltime / games_fulltime
+        avg_goals_fulltime = (goals_preround_x2 / 2 + goals_fulltime) / (games_preround_x2 / 2 + games_fulltime)
         avg_goals_nv = goals_nv / games_nv
         avg_goals_ne = goals_ne / games_ne
 
@@ -137,17 +136,21 @@ def tip_all_games():
 
         tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne)
 
-        # # Go to tip submission page
-        # page.goto(F"https://www.kicktipp.de/{NAME_OF_COMPETITION}/tippabgabe")
-
         # Close browser
         browser.close()
 
 def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne):
+    if KICKTIPP_NAME_OF_90M_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime)
+    if KICKTIPP_NAME_OF_NV_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, avg_goals_nv)
+    if KICKTIPP_NAME_OF_NE_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_NE_COMPETITION, page, avg_goals_ne)
 
-
+def enter_tips(name_of_competition, page, avg_goals):
+    info(f'{name_of_competition=}')
     # Go to tip submission page
-    page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_QUOTES_COMPETITION}/tippabgabe")
+    page.goto(F"https://www.kicktipp.de/{name_of_competition}/tippabgabe")
 
     # Find open game forms
     table_handle = page.locator("#tippabgabeSpiele")
@@ -156,14 +159,10 @@ def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_go
 
     time = None
 
-    all_quotes = []
-    home_teams = []
-    away_teams = []
-
     for game_locator in datarows.all():
         tippabgaben = game_locator.locator('.kicktipp-tippabgabe')
 
-        for _ in tippabgaben.all():
+        for tippabgabe in tippabgaben.all():
             logging.debug(f'{game_locator.inner_html()=}')
 
             # Get game info
@@ -212,33 +211,6 @@ def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_go
             # Print quotes
             print("Quotes:" + str(quotes))
 
-            all_quotes.append(quotes)
-            home_teams.append(home_team)
-            away_teams.append(away_team)
-
-    if KICKTIPP_NAME_OF_90M_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, all_quotes, home_teams, away_teams, avg_goals_fulltime)
-    if KICKTIPP_NAME_OF_NV_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, all_quotes, home_teams, away_teams, avg_goals_nv)
-    if KICKTIPP_NAME_OF_NE_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_NE_COMPETITION, page, all_quotes, home_teams, away_teams, avg_goals_ne)
-
-def enter_tips(name_of_competition, page, all_quotes, home_teams, away_teams, avg_goals):
-    info(f'{name_of_competition=}, {all_quotes=}, {home_teams=}, {away_teams=}')
-    # Go to tip submission page
-    page.goto(F"https://www.kicktipp.de/{name_of_competition}/tippabgabe")
-
-    # Find open game forms
-    table_handle = page.locator("#tippabgabeSpiele")
-
-    datarows = table_handle.locator('xpath=//tbody/tr')
-
-    time = None
-
-    for index, game_locator in enumerate(datarows.all()):
-        tippabgaben = game_locator.locator('.kicktipp-tippabgabe')
-
-        for _, tippabgabe in enumerate(tippabgaben.all()):
             logging.debug(f'{game_locator.inner_html()=}')
 
             # Get game info
@@ -253,8 +225,6 @@ def enter_tips(name_of_competition, page, all_quotes, home_teams, away_teams, av
             if time_until_game > TIME_UNTIL_GAME:
                 print(f'Game starts in {time_until_game}, thats more than ', TIME_UNTIL_GAME, '. Skipping...\n')
                 continue
-
-            quotes = all_quotes[index]
 
             # Extract Team names
             home_team_element = game_locator.locator(".col1")
@@ -284,7 +254,7 @@ def enter_tips(name_of_competition, page, all_quotes, home_teams, away_teams, av
             send_zapier_webhook(time, home_team, away_team, quotes, tip)
 
             # ntfy notification
-            send_ntfy_notification(time, home_team, away_team, quotes, tip)
+            send_ntfy_notification(name_of_competition, home_team, away_team, quotes, tip)
 
 
 def login(page):
@@ -319,10 +289,10 @@ def send_zapier_webhook(time, home_team, away_team, quotes, tip):
             pass
 
 
-def send_ntfy_notification(time, home_team, away_team, quotes, tip):
+def send_ntfy_notification(name_of_competition, home_team, away_team, quotes, tip):
     if NTFY_URL is not None and NTFY_USERNAME is not None and NTFY_PASSWORD is not None:
         try:
-            data = f"quotes={quotes}; ratio={tip[2]}; goals={tip[3]}; tip={tip[4]}:{tip[5]}"
+            data = f"{name_of_competition}: quotes={quotes}; ratio={tip[2]}; goals={tip[3]}; tip={tip[4]}:{tip[5]}"
 
             headers = {
                 "X-Title": f"{home_team} - {away_team} tipped {tip[0]}:{tip[1]}",
