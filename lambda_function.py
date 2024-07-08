@@ -150,7 +150,7 @@ def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_go
 def enter_tips(name_of_competition, page, avg_goals):
     info(f'{name_of_competition=}')
     # Go to tip submission page
-    page.goto(F"https://www.kicktipp.de/{name_of_competition}/tippabgabe")
+    page.goto(F"https://www.kicktipp.de/{name_of_competition}/tippabgabe", wait_until="commit")
 
     # Find open game forms
     table_handle = page.locator("#tippabgabeSpiele")
