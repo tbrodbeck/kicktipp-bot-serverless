@@ -46,25 +46,28 @@ def predict_with_win_loss_ratio(win, loss, expected_goals, need_winner):
     win_goals_estimate = expected_goals - loss_goals_estimate
     debug(f'loss_ratio={loss_ratio}; loss_goals_estimate={loss_goals_estimate}; win_goals_estimate={win_goals_estimate}')
 
-    if need_winner and win_goals_estimate == loss_goals_estimate:
+    win_bet = round(win_goals_estimate)
+    loss_bet = round(loss_goals_estimate)
+
+    if need_winner and win_bet == loss_bet:
         if loss_ratio < 0.5:
-            if win_goals_estimate + loss_goals_estimate < expected_goals:
-                win_goals_estimate += 1
+            if win_bet + loss_bet < expected_goals:
+                win_bet += 1
             else:
-                loss_goals_estimate -= 1
+                loss_bet -= 1
         elif loss_ratio == 0.5:
             info('GG')
             if random.randint(0, 1):
-                win_goals_estimate += 1
+                win_bet += 1
             else:
-                loss_goals_estimate += 1
+                loss_bet += 1
         else:
-            if win_goals_estimate + loss_goals_estimate < expected_goals:
-                loss_goals_estimate += 1
+            if win_bet + loss_bet < expected_goals:
+                loss_bet += 1
             else:
-                win_goals_estimate -= 1
+                win_bet -= 1
 
-    return round(win_goals_estimate), round(loss_goals_estimate), round(1 - loss_ratio, 2), round(expected_goals, 2), round(win_goals_estimate, 2), round(loss_goals_estimate, 2)
+    return win_bet, loss_bet, round(1 - loss_ratio, 2), round(expected_goals, 2), round(win_goals_estimate, 2), round(loss_goals_estimate, 2)
 
 def tip_all_games():
     # Launch Playwright
@@ -139,12 +142,12 @@ def tip_all_games():
         browser.close()
 
 def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne, end_round):
-    if KICKTIPP_NAME_OF_90M_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime, False)
-    if KICKTIPP_NAME_OF_NV_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, avg_goals_nv, False)
     if KICKTIPP_NAME_OF_NE_COMPETITION:
         enter_tips(KICKTIPP_NAME_OF_NE_COMPETITION, page, avg_goals_ne, end_round)
+    if KICKTIPP_NAME_OF_NV_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, avg_goals_nv, False)
+    if KICKTIPP_NAME_OF_90M_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime, False)
     if not KICKTIPP_NAME_OF_90M_COMPETITION and not KICKTIPP_NAME_OF_NV_COMPETITION and not KICKTIPP_NAME_OF_NE_COMPETITION:
         enter_tips(KICKTIPP_NAME_OF_COMPETITION, page, avg_goals_ne, end_round)
 
