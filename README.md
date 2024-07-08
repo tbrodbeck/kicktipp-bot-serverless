@@ -20,7 +20,10 @@ Run `pip install -r requirements.txt` to install the dependencies.
 | --- | --- | --- | --- |
 | `KICKTIPP_EMAIL` | Your Kicktipp email | `email@example.com` | Yes |
 | `KICKTIPP_PASSWORD` | Your Kicktipp password | `password` | Yes |
-| `KICKTIPP_NAME_OF_COMPETITION` | The name of the competition you want to tip for | `mycoolfriendgroup` | Yes |
+| `KICKTIPP_NAME_OF_COMPETITION` | The name of the competition you want to tip for. This group is required because it will be used to look at the past games. Only if no other competition is used this one will be used with the "Nach Elfmeterschießen" evaluation | `mycoolfriendgroup` | Yes |
+| `KICKTIPP_NAME_OF_90M_COMPETITION` | The name of the competition you want to tip for that uses the "Nach 90 min" evaluation | `mycoolfriendgroup` | No |
+| `KICKTIPP_NAME_OF_NV_COMPETITION` | The name of the competition you want to tip for that uses the "Nach Verlängerung" evaluation | `mycoolfriendgroup` | No |
+| `KICKTIPP_NAME_OF_NE_COMPETITION` | The name of the competition you want to tip for that uses the "Nach Elfmeterschießen" evaluation | `mycoolfriendgroup` | No |
 | `KICKTIPP_HOURS_UNTIL_GAME` | The script will tip games which start in the next x hours | `24` | No |
 | `LOG_LEVEL` | The log level of the script | `INFO` | Yes |
 | `ZAPIER_URL` | The URL of your Zapier Webhook | `https://hooks.zapier.com/hooks/catch/123456/abcdef/` | No |

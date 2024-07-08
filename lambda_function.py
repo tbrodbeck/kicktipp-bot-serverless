@@ -14,7 +14,7 @@ BASE_URL = "https://www.kicktipp.de/"
 LOGIN_URL = "https://www.kicktipp.de/info/profil/login/"
 EMAIL = os.getenv("KICKTIPP_EMAIL")
 PASSWORD = os.getenv("KICKTIPP_PASSWORD")
-KICKTIPP_NAME_OF_QUOTES_COMPETITION = os.getenv("KICKTIPP_NAME_OF_QUOTES_COMPETITION")
+KICKTIPP_NAME_OF_COMPETITION = os.getenv("KICKTIPP_NAME_OF_COMPETITION")
 KICKTIPP_NAME_OF_90M_COMPETITION = os.getenv("KICKTIPP_NAME_OF_90M_COMPETITION")
 KICKTIPP_NAME_OF_NV_COMPETITION = os.getenv("KICKTIPP_NAME_OF_NV_COMPETITION")
 KICKTIPP_NAME_OF_NE_COMPETITION = os.getenv("KICKTIPP_NAME_OF_NE_COMPETITION")
@@ -26,9 +26,8 @@ NTFY_USERNAME = os.getenv("NTFY_USERNAME")
 NTFY_PASSWORD = os.getenv("NTFY_PASSWORD")
 
 LOG_LEVEL = os.getenv("LOG_LEVEL")
-KO_ROUND = os.getenv("KO_ROUND")
 
-def predict_with_win_loss_ratio(win, loss, goals_so_far, group_phase):
+def predict_with_win_loss_ratio(win, loss, expected_goals, need_winner):
     """
     Calculate predicted goals based on win/loss ratio and average goals.
 
@@ -40,8 +39,6 @@ def predict_with_win_loss_ratio(win, loss, goals_so_far, group_phase):
     Returns:
     tuple: Tuple containing predicted goals for team 1, team 2, and the loss ratio.
     """
-    ko_goal_multiplier = 3.29 / 2.94
-    expected_goals = goals_so_far if group_phase else goals_so_far * ko_goal_multiplier # the group phase will require an additional scraping logic with calculating the `expected_goals`
 
     loss_ratio = win / (win + loss)
     debug(f'average_goals={expected_goals}; loss_ratio={loss_ratio}')
@@ -49,7 +46,7 @@ def predict_with_win_loss_ratio(win, loss, goals_so_far, group_phase):
     win_goals_estimate = expected_goals - loss_goals_estimate
     debug(f'loss_ratio={loss_ratio}; loss_goals_estimate={loss_goals_estimate}; win_goals_estimate={win_goals_estimate}')
 
-    if not group_phase and win_goals_estimate == loss_goals_estimate:
+    if need_winner and win_goals_estimate == loss_goals_estimate:
         if loss_ratio < 0.5:
             if win_goals_estimate + loss_goals_estimate < expected_goals:
                 win_goals_estimate += 1
@@ -79,7 +76,7 @@ def tip_all_games():
         login(page)
 
         # Get goals from previous round to calculate the average goals
-        page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_QUOTES_COMPETITION}/tabellen")
+        page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_COMPETITION}/tabellen")
 
         # Find tables with games data
         tables = page.query_selector_all(".drei_punkte_regel")
@@ -97,7 +94,7 @@ def tip_all_games():
                 both_goals = both_goals_str.split(':')
                 goals_preround_x2 += int(both_goals[0]) + int(both_goals[1])
 
-        avg_goals_preround = goals_preround_x2 / games_preround_x2
+        avg_goals_preround = 2.25 if games_preround_x2 == 0 else goals_preround_x2 / games_preround_x2
         info(f'{avg_goals_preround=}')
 
         goals_fulltime = 0
@@ -108,7 +105,7 @@ def tip_all_games():
         games_ne = 0
 
         for index in range (8, 11):
-            page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_QUOTES_COMPETITION}/tippspielplan?tippsaisonId=2801716&spieltagIndex={index}")
+            page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_COMPETITION}/tippspielplan?tippsaisonId=2801716&spieltagIndex={index}")
             results = page.locator('.kicktipp-abpfiff')
             for result in results.all():
                 result_items = result.locator('//span').all()
@@ -128,26 +125,30 @@ def tip_all_games():
         debug(f'{games_fulltime=}, {games_nv=}, {games_ne=}')
         debug(f'{goals_fulltime=}, {goals_nv=}, {goals_ne=}')
 
-        avg_goals_fulltime = (goals_preround_x2 / 2 + goals_fulltime) / (games_preround_x2 / 2 + games_fulltime)
-        avg_goals_nv = goals_nv / games_nv
-        avg_goals_ne = goals_ne / games_ne
+        avg_goals_fulltime = 2.25 if games_preround_x2 == 0 else (goals_preround_x2 / 2 + goals_fulltime) / (games_preround_x2 / 2 + games_fulltime)
+        avg_goals_nv = 3 if games_nv == 0 else goals_nv / games_nv
+        avg_goals_ne = 3.8333333333333335 if games_ne == 0 else goals_ne / games_ne
 
         info(f'{avg_goals_fulltime=}, {avg_goals_nv=}, {avg_goals_ne=}')
 
-        tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne)
+        end_round = games_ne > 0
+
+        tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne, end_round)
 
         # Close browser
         browser.close()
 
-def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne):
+def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne, end_round):
     if KICKTIPP_NAME_OF_90M_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime)
+        enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime, False)
     if KICKTIPP_NAME_OF_NV_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, avg_goals_nv)
+        enter_tips(KICKTIPP_NAME_OF_NV_COMPETITION, page, avg_goals_nv, False)
     if KICKTIPP_NAME_OF_NE_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_NE_COMPETITION, page, avg_goals_ne)
+        enter_tips(KICKTIPP_NAME_OF_NE_COMPETITION, page, avg_goals_ne, end_round)
+    if not KICKTIPP_NAME_OF_90M_COMPETITION and not KICKTIPP_NAME_OF_NV_COMPETITION and not KICKTIPP_NAME_OF_NE_COMPETITION:
+        enter_tips(KICKTIPP_NAME_OF_COMPETITION, page, avg_goals_ne, end_round)
 
-def enter_tips(name_of_competition, page, avg_goals):
+def enter_tips(name_of_competition, page, avg_goals, need_winner):
     info(f'{name_of_competition=}')
     # Go to tip submission page
     page.goto(F"https://www.kicktipp.de/{name_of_competition}/tippabgabe", wait_until="commit")
@@ -236,7 +237,7 @@ def enter_tips(name_of_competition, page, avg_goals):
             print(home_team + " - " + away_team)
 
             # Calculate tips
-            tip = predict_with_win_loss_ratio(float(quotes[0]), float(quotes[2]), avg_goals, bool(KO_ROUND))
+            tip = predict_with_win_loss_ratio(float(quotes[0]), float(quotes[2]), avg_goals, need_winner)
             logging.debug(f'{tip=}')
             print("Tip: " + str(tip), "\n")
 
