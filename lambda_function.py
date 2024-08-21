@@ -98,45 +98,9 @@ def tip_all_games():
                 goals_preround_x2 += int(both_goals[0]) + int(both_goals[1])
 
         avg_goals_preround = 2.25 if games_preround_x2 == 0 else goals_preround_x2 / games_preround_x2
-        info(f'{avg_goals_preround=}')
+        info(f'{avg_goals_preround=}')\
 
-        goals_fulltime = 0
-        games_fulltime = 0
-        goals_nv = 0
-        games_nv = 0
-        goals_ne = 0
-        games_ne = 0
-
-        for index in range (8, 11):
-            page.goto(F"https://www.kicktipp.de/{KICKTIPP_NAME_OF_COMPETITION}/tippspielplan?tippsaisonId=2801716&spieltagIndex={index}")
-            results = page.locator('.kicktipp-abpfiff')
-            for result in results.all():
-                result_items = result.locator('//span').all()
-                goals = int(result_items[0].inner_text()) + int(result_items[2].inner_text())
-                goals_ne += goals
-                games_ne += 1
-                if len(result_items) == 4:
-                    if result_items[3].inner_text() == 'n.V.':
-                        goals_nv += goals
-                        games_nv += 1
-                else:
-                    goals_fulltime += goals
-                    games_fulltime += 1
-
-        page.get_by_role("button", name="ZUSTIMMEN").click()
-
-        debug(f'{games_fulltime=}, {games_nv=}, {games_ne=}')
-        debug(f'{goals_fulltime=}, {goals_nv=}, {goals_ne=}')
-
-        avg_goals_fulltime = 2.25 if games_preround_x2 == 0 else (goals_preround_x2 / 2 + goals_fulltime) / (games_preround_x2 / 2 + games_fulltime)
-        avg_goals_nv = 3 if games_nv == 0 else goals_nv / games_nv
-        avg_goals_ne = 3.8333333333333335 if games_ne == 0 else goals_ne / games_ne
-
-        info(f'{avg_goals_fulltime=}, {avg_goals_nv=}, {avg_goals_ne=}')
-
-        end_round = games_ne > 0
-
-        tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_goals_ne, end_round)
+        tip_all_games_for_competition(page, avg_goals_preround, None, None, False)
 
         # Close browser
         browser.close()
@@ -149,7 +113,7 @@ def tip_all_games_for_competition(page, avg_goals_fulltime, avg_goals_nv, avg_go
     if KICKTIPP_NAME_OF_90M_COMPETITION:
         enter_tips(KICKTIPP_NAME_OF_90M_COMPETITION, page, avg_goals_fulltime, False)
     if not KICKTIPP_NAME_OF_90M_COMPETITION and not KICKTIPP_NAME_OF_NV_COMPETITION and not KICKTIPP_NAME_OF_NE_COMPETITION:
-        enter_tips(KICKTIPP_NAME_OF_COMPETITION, page, avg_goals_ne, end_round)
+        enter_tips(KICKTIPP_NAME_OF_COMPETITION, page, avg_goals_fulltime, end_round)
 
 def enter_tips(name_of_competition, page, avg_goals, need_winner):
     info(f'{name_of_competition=}')
@@ -335,7 +299,6 @@ def lambda_handler(_event, _context):
 
     tip_all_games()
 
-    print(now + ": The script has finished. Sleeping for 30 min...\n")
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')
